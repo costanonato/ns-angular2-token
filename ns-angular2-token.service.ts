@@ -28,12 +28,12 @@ import {
     AuthData,
 
     Angular2TokenOptions
-} from './angular2-token.model';
+} from './ns-angular2-token.model';
 
 import { getString, setString, remove } from "application-settings";
 
 @Injectable()
-export class Angular2TokenService implements CanActivate {
+export class NsAngular2TokenService implements CanActivate {
 
     get currentUserType(): string {
         if (this.atCurrentUserType != null)
