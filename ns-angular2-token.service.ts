@@ -29,7 +29,7 @@ import {
 import { getString, setString, remove } from "application-settings";
 
 @Injectable()
-export class Angular2TokenService implements CanActivate {
+export class NSAngular2TokenService implements CanActivate {
 
     get currentUserType(): string {
         if (this.atCurrentUserType != null)
