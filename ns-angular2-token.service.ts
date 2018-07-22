@@ -10,12 +10,8 @@ import {
     RequestOptionsArgs
 } from '@angular/http';
 
-import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/share';
-import 'rxjs/add/observable/interval';
-import 'rxjs/add/observable/fromEvent';
-import 'rxjs/add/operator/pluck';
-import 'rxjs/add/operator/filter';
+import { Observable, interval, fromEvent } from 'rxjs';
+import { share, pluck, filter } from 'rxjs/operators';
 
 import {
     SignInData,
@@ -28,12 +24,12 @@ import {
     AuthData,
 
     Angular2TokenOptions
-} from './ns-angular2-token.model';
+} from './angular2-token.model';
 
 import { getString, setString, remove } from "application-settings";
 
 @Injectable()
-export class NSAngular2TokenService implements CanActivate {
+export class Angular2TokenService implements CanActivate {
 
     get currentUserType(): string {
         if (this.atCurrentUserType != null)
@@ -118,6 +114,14 @@ export class NSAngular2TokenService implements CanActivate {
 
             userTypes:                  null,
 
+            oAuthBase:                  "",
+            oAuthPaths: {
+                github:                 'auth/github'
+            },
+            oAuthCallbackPath:          'oauth_callback',
+            oAuthWindowType:            'newWindow',
+            oAuthWindowOptions:         null,
+
             globalOptions: {
                 headers: {
                     'Content-Type': 'application/json',
@@ -147,8 +151,13 @@ export class NSAngular2TokenService implements CanActivate {
             delete registerData.userType;
         }
 
-        registerData.password_confirmation  = registerData.passwordConfirmation;
-        delete registerData.passwordConfirmation;
+        if (
+            registerData.password_confirmation == null && 
+            registerData.passwordConfirmation != null
+        ) {
+            registerData.password_confirmation  = registerData.passwordConfirmation;
+            delete registerData.passwordConfirmation;
+        }
 
         registerData.confirm_success_url    = this.atOptions.registerAccountCallback;
 
@@ -347,7 +356,7 @@ export class NSAngular2TokenService implements CanActivate {
         // Merge standard and custom RequestOptions
         baseRequestOptions = baseRequestOptions.merge(options);
 
-        let response = this.http.request(new Request(baseRequestOptions)).share();
+        let response = this.http.request(new Request(baseRequestOptions)).pipe(share());
         this.handleResponse(response);
 
         return response;
@@ -561,10 +570,12 @@ export class NSAngular2TokenService implements CanActivate {
      */
 
     private requestCredentialsViaPostMessage(authWindow: any): Observable<any> {
-        let pollerObserv = Observable.interval(500);
+        let pollerObserv = interval(500);
 
-        let responseObserv = Observable.fromEvent(window, 'message').pluck('data')
-            .filter(this.oAuthWindowResponseFilter);
+        let responseObserv = fromEvent(window, 'message').pipe(
+            pluck('data'),
+            filter(this.oAuthWindowResponseFilter)
+        );
 
         let responseSubscription = responseObserv.subscribe(
             this.getAuthDataFromPostMessage.bind(this)
